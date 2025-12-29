@@ -1,0 +1,71 @@
+<div class="h-screen w-full relative overflow-hidden">
+  
+  @switch (currentView()) {
+    @case ('home') {
+      <div class="h-full animate-slideUp">
+        <app-home (selectMode)="handleModeSelection($event)"></app-home>
+      </div>
+    }
+    @case ('pipeline') {
+      <!-- Main Pipeline Flow -->
+      @switch (wf.currentStep()) {
+        @case ('vibe-entry') {
+          <app-vibecode 
+            (switchToTool)="switchToView('tool')" 
+            (switchToArchitect)="switchToView('architect')"
+            (exit)="goHome()">
+          </app-vibecode>
+        }
+        @case ('crystallize') {
+          <div class="h-full animate-slideLeft">
+            <app-crystallize></app-crystallize>
+          </div>
+        }
+        @case ('refine-director') {
+          <div class="h-full animate-slideLeft">
+            <app-director (exit)="goHome()"></app-director>
+          </div>
+        }
+        @case ('check') {
+          <div class="h-full animate-slideLeft">
+            <app-check></app-check>
+          </div>
+        }
+        @case ('simulation') {
+          <div class="h-full animate-slideLeft">
+            <app-simulation></app-simulation>
+          </div>
+        }
+        @case ('final') {
+          <div class="h-full animate-slideLeft">
+            <app-final></app-final>
+          </div>
+        }
+      }
+    }
+    @case ('architect') {
+      <div class="h-full animate-slideUp">
+         <app-architect (close)="goHome()" (refineWithDirector)="handleArchitectRefinement($event)"></app-architect>
+      </div>
+    }
+    @case ('tool') {
+       <div class="h-full animate-slideUp">
+         <app-tool (close)="goHome()"></app-tool>
+      </div>
+    }
+    @case ('antibias') {
+       <div class="h-full animate-slideUp">
+         <app-antibias (close)="goHome()"></app-antibias>
+      </div>
+    }
+  }
+
+</div>
+
+<style>
+  @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+  .animate-slideUp { animation: slideUp 0.4s cubic-bezier(0.2, 0.0, 0, 1.0) forwards; }
+  
+  @keyframes slideLeft { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+  .animate-slideLeft { animation: slideLeft 0.4s cubic-bezier(0.2, 0.0, 0, 1.0) forwards; }
+</style>

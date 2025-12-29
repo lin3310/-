@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="utf-8">
+  <title>人格鍊成 AI (Persona Alchemist AI)</title>
+  <base href="/">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+  <style>
+    /* THEME SYSTEM: CSS Variables */
+    :root {
+      /* Light Theme */
+      --bg-body: #ffffff;
+      --bg-primary: #ffffff;
+      --bg-secondary: #f3f3f3;
+      --bg-tertiary: #e0e0e0;
+      --bg-surface-container: #f0f0f0;
+      --text-primary: #1d1b20;
+      --text-secondary: #49454f;
+      --border-primary: #cccccc;
+      --border-secondary: #dddddd;
+      --ring-focus: #b94033;
+      --scrollbar-track: #f1f1f1;
+      --scrollbar-thumb: #d0bcff;
+      --scrollbar-thumb-hover: #6750a4;
+
+      /* Module Colors */
+      --vibe-bg-main: #fff8f6; --vibe-bg-header: #ffdad6; --vibe-bg-card: #ffffff; --vibe-bg-input: #fff8f6; --vibe-bg-bubble-user: #b94033; --vibe-bg-bubble-model: #ffffff; --vibe-accent: #b94033; --vibe-accent-bg: #b94033; --vibe-accent-bg-alt: #ffffff; --vibe-on-accent: #ffffff; --vibe-border: #ffb4ab;
+      --arch-bg-main: #f0fcfc; --arch-bg-header: #ffffff80; --arch-bg-card: #ffffff; --arch-bg-input: #ffffff; --arch-bg-step-inactive: #dceceb; --arch-accent: #006a6a; --arch-accent-bg: #006a6a; --arch-on-accent: #ffffff; --arch-border: #a6e6e6; --arch-text-secondary: #004a4a;
+      --tool-bg-main: #e3e9ea; --tool-bg-header: #cfdbdc; --tool-bg-card: #fbfdfd; --tool-bg-input: #fbfdfd; --tool-bg-bubble-user: #3f4949; --tool-accent: #3f4949; --tool-on-accent: #ffffff; --tool-border: #aebcbc; --tool-text-header: #191c1c;
+      --antibias-bg-main: #f0f0f8; --antibias-bg-header: #e8e8f2; --antibias-bg-card: #fafafd; --antibias-bg-input: #fafafd; --antibias-bg-bubble-user: #3f51b5; --antibias-accent: #3f51b5; --antibias-on-accent: #ffffff; --antibias-border: #d0d0e0; --antibias-text-header: #2c2a44;
+      --final-bg-main: #fffbf0; --final-bg-card: #ffffff; --final-accent: #423408; --final-accent-light: #755d14; --final-accent-bg: #ecc658; --final-on-accent: #423408; --final-border: #ecc65830;
+    }
+    html.slate {
+      /* Slate Theme (Cool Gray) */
+      --bg-body: #37474F;
+      --bg-primary: #455A64;
+      --bg-secondary: #546E7A;
+      --bg-tertiary: #607D8B;
+      --bg-surface-container: #546E7A;
+      --text-primary: #ECEFF1;
+      --text-secondary: #B0BEC5;
+      --border-primary: #546E7A;
+      --border-secondary: #455A64;
+      --ring-focus: #ffab91;
+      --scrollbar-track: #263238;
+      --scrollbar-thumb: #546E7A;
+      --scrollbar-thumb-hover: #78909C;
+
+      /* Module Colors */
+      --vibe-bg-main: #4a424e; --vibe-bg-header: #625a66; --vibe-bg-card: #524b56; --vibe-bg-input: #524b56; --vibe-bg-bubble-user: #a1887f; --vibe-bg-bubble-model: #524b56; --vibe-accent: #ffab91; --vibe-accent-bg: #8d6e63; --vibe-accent-bg-alt: #625a66; --vibe-on-accent: #ffffff; --vibe-border: #6f6377;
+      --arch-bg-main: #3c4f4a; --arch-bg-header: #26323880; --arch-bg-card: #475d58; --arch-bg-input: #475d58; --arch-bg-step-inactive: #263238; --arch-accent: #80cbc4; --arch-accent-bg: #4db6ac; --arch-on-accent: #004d40; --arch-border: #26A69A; --arch-text-secondary: #b2dfdb;
+      --tool-bg-main: #424242; --tool-bg-header: #525252; --tool-bg-card: #616161; --tool-bg-input: #616161; --tool-bg-bubble-user: #757575; --tool-accent: #e0e0e0; --tool-on-accent: #212121; --tool-border: #757575; --tool-text-header: #eeeeee;
+      --antibias-bg-main: #3d3b5e; --antibias-bg-header: #4a477e; --antibias-bg-card: #524f8a; --antibias-bg-input: #524f8a; --antibias-bg-bubble-user: #7986CB; --antibias-accent: #c5cae9; --antibias-on-accent: #ffffff; --antibias-border: #5C6BC0; --antibias-text-header: #e8eaf6;
+      --final-bg-main: #54524c; --final-bg-card: #615f59; --final-accent: #ffcc80; --final-accent-light: #ffab40; --final-accent-bg: #8a867f; --final-on-accent: #4e342e; --final-border: #7b7972;
+    }
+    html.dark {
+      /* Dark Theme */
+      --bg-body: #121212;
+      --bg-primary: #1c1b1f;
+      --bg-secondary: #2c2b2f;
+      --bg-tertiary: #3c3b3f;
+      --bg-surface-container: #2c2b2f;
+      --text-primary: #e6e1e5;
+      --text-secondary: #cac4d0;
+      --border-primary: #49454f;
+      --border-secondary: #39353f;
+      --ring-focus: #ffb4ab;
+      --scrollbar-track: #2d2d2d;
+      --scrollbar-thumb: #4a4458;
+      --scrollbar-thumb-hover: #6750a4;
+
+      /* Module Colors */
+      --vibe-bg-main: #2b1715; --vibe-bg-header: #522a26; --vibe-bg-card: #3d1c19; --vibe-bg-input: #3d1c19; --vibe-bg-bubble-user: #7d2925; --vibe-bg-bubble-model: #3d1c19; --vibe-accent: #ffb4ab; --vibe-accent-bg: #7d2925; --vibe-accent-bg-alt: #522a26; --vibe-on-accent: #ffffff; --vibe-border: #7d2925;
+      --arch-bg-main: #002020; --arch-bg-header: #00000080; --arch-bg-card: #002020; --arch-bg-input: #1a2d2d; --arch-bg-step-inactive: #1a2d2d; --arch-accent: #88d5d5; --arch-accent-bg: #50b2b2; --arch-on-accent: #002020; --arch-border: #384949; --arch-text-secondary: #88d5d5;
+      --tool-bg-main: #121818; --tool-bg-header: #191c1c; --tool-bg-card: #191c1c; --tool-bg-input: #191c1c; --tool-bg-bubble-user: #2d3535; --tool-accent: #a8b1b1; --tool-on-accent: #e0e3e3; --tool-border: #404949; --tool-text-header: #e0e3e3;
+      --antibias-bg-main: #191921; --antibias-bg-header: #1f1e29; --antibias-bg-card: #1f1e29; --antibias-bg-input: #1f1e29; --antibias-bg-bubble-user: #3f51b5; --antibias-accent: #a1a1c4; --antibias-on-accent: #ffffff; --antibias-border: #464559; --antibias-text-header: #c7c5d9;
+      --final-bg-main: #211a00; --final-bg-card: #1c1c16; --final-accent: #ffe086; --final-accent-light: #d3b96f; --final-accent-bg: #5c470a; --final-on-accent: #ffe086; --final-border: #5c470a;
+    }
+    html.black {
+       /* Black Theme */
+      --bg-body: #0A0A0A;
+      --bg-primary: #141414;
+      --bg-secondary: #1F1F1F;
+      --bg-tertiary: #2A2A2A;
+      --bg-surface-container: #1F1F1F;
+      --text-primary: #e6e1e5;
+      --text-secondary: #cac4d0;
+      --border-primary: #333333;
+      --border-secondary: #222222;
+      --ring-focus: #ffb4ab;
+      --scrollbar-track: #141414;
+      --scrollbar-thumb: #4a4458;
+      --scrollbar-thumb-hover: #6750a4;
+
+      /* Module Colors adjusted for darker bg */
+      --vibe-bg-main: #1A0F0E; --vibe-bg-header: #4A1F1B; --vibe-bg-card: #2E120F; --vibe-bg-input: #2E120F; --vibe-bg-bubble-user: #7d2925; --vibe-bg-bubble-model: #2E120F; --vibe-accent: #ffb4ab; --vibe-accent-bg: #7d2925; --vibe-accent-bg-alt: #4A1F1B; --vibe-on-accent: #ffffff; --vibe-border: #6E2420;
+      --arch-bg-main: #001A1A; --arch-bg-header: #00000080; --arch-bg-card: #001A1A; --arch-bg-input: #102424; --arch-bg-step-inactive: #102424; --arch-accent: #88d5d5; --arch-accent-bg: #50b2b2; --arch-on-accent: #002020; --arch-border: #2F4040; --arch-text-secondary: #88d5d5;
+      --tool-bg-main: #0F1414; --tool-bg-header: #121414; --tool-bg-card: #121414; --tool-bg-input: #121414; --tool-bg-bubble-user: #2d3535; --tool-accent: #a8b1b1; --tool-on-accent: #e0e3e3; --tool-border: #383F3F; --tool-text-header: #e0e3e3;
+      --antibias-bg-main: #12121A; --antibias-bg-header: #1A1921; --antibias-bg-card: #1A1921; --antibias-bg-input: #1A1921; --antibias-bg-bubble-user: #3f51b5; --antibias-accent: #a1a1c4; --antibias-on-accent: #ffffff; --antibias-border: #3E3D4F; --antibias-text-header: #c7c5d9;
+      --final-bg-main: #1A1600; --final-bg-card: #151511; --final-accent: #ffe086; --final-accent-light: #d3b96f; --final-accent-bg: #5c470a; --final-on-accent: #ffe086; --final-border: #4D3D08;
+    }
+    html.amoled {
+       /* AMOLED Theme */
+      --bg-body: #000000;
+      --bg-primary: #000000;
+      --bg-secondary: #111111;
+      --bg-tertiary: #1D1D1D;
+      --bg-surface-container: #111111;
+      --text-primary: #e6e1e5;
+      --text-secondary: #cac4d0;
+      --border-primary: #2e2e2e;
+      --border-secondary: #1e1e1e;
+      --ring-focus: #ffb4ab;
+      --scrollbar-track: #000000;
+      --scrollbar-thumb: #4a4458;
+      --scrollbar-thumb-hover: #6750a4;
+
+      /* Module Colors on pure black */
+      --vibe-bg-main: #000000; --vibe-bg-header: #4A1F1B; --vibe-bg-card: #000000; --vibe-bg-input: #111111; --vibe-bg-bubble-user: #7d2925; --vibe-bg-bubble-model: #111111; --vibe-accent: #ffb4ab; --vibe-accent-bg: #7d2925; --vibe-accent-bg-alt: #4A1F1B; --vibe-on-accent: #ffffff; --vibe-border: #6E2420;
+      --arch-bg-main: #000000; --arch-bg-header: #00000080; --arch-bg-card: #000000; --arch-bg-input: #102424; --arch-bg-step-inactive: #102424; --arch-accent: #88d5d5; --arch-accent-bg: #50b2b2; --arch-on-accent: #002020; --arch-border: #2F4040; --arch-text-secondary: #88d5d5;
+      --tool-bg-main: #000000; --tool-bg-header: #121414; --tool-bg-card: #121414; --tool-bg-input: #121414; --tool-bg-bubble-user: #2d3535; --tool-accent: #a8b1b1; --tool-on-accent: #e0e3e3; --tool-border: #383F3F; --tool-text-header: #e0e3e3;
+      --antibias-bg-main: #000000; --antibias-bg-header: #1A1921; --antibias-bg-card: #1A1921; --antibias-bg-input: #1A1921; --antibias-bg-bubble-user: #3f51b5; --antibias-accent: #a1a1c4; --antibias-on-accent: #ffffff; --antibias-border: #3E3D4F; --antibias-text-header: #c7c5d9;
+      --final-bg-main: #000000; --final-bg-card: #000000; --final-accent: #ffe086; --final-accent-light: #d3b96f; --final-accent-bg: #5c470a; --final-on-accent: #ffe086; --final-border: #4D3D08;
+    }
+
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: var(--bg-body);
+      color: var(--text-primary);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+
+    /* Material Design 3 Elevation & Transitions */
+    .m3-card {
+      transition: all 0.3s cubic-bezier(0.2, 0.0, 0, 1.0);
+    }
+    .m3-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 8px 3px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.3);
+    }
+    /* Custom Scrollbar for chat */
+    ::-webkit-scrollbar {
+      width: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--scrollbar-track);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: var(--scrollbar-thumb);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--scrollbar-thumb-hover);
+    }
+  </style>
+<script type="importmap">
+{
+  "imports": {
+    "rxjs": "https://esm.sh/rxjs@^7.8.2?conditions=es2015",
+    "rxjs/operators": "https://esm.sh/rxjs@^7.8.2/operators?conditions=es2015",
+    "rxjs/ajax": "https://esm.sh/rxjs@^7.8.2/ajax?conditions=es2015",
+    "rxjs/webSocket": "https://esm.sh/rxjs@^7.8.2/webSocket?conditions=es2015",
+    "rxjs/testing": "https://esm.sh/rxjs@^7.8.2/testing?conditions=es2015",
+    "rxjs/fetch": "https://esm.sh/rxjs@^7.8.2/fetch?conditions=es2015",
+    "@angular/common": "https://esm.sh/@angular/common@^21.0.6?external=rxjs",
+    "@angular/platform-browser": "https://esm.sh/@angular/platform-browser@^21.0.6?external=rxjs",
+    "@angular/core": "https://esm.sh/@angular/core@^21.0.6?external=rxjs",
+    "@angular/compiler": "https://esm.sh/@angular/compiler@^21.0.6?external=rxjs",
+    "@angular/forms": "https://esm.sh/@angular/forms@^21.0.6?external=rxjs",
+    "@google/genai": "https://esm.sh/@google/genai@^1.34.0?external=rxjs"
+  }
+}
+</script>
+</head>
+<body>
+  <app-root></app-root>
+</body>
+</html>

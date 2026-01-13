@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, computed } from '@angular/core';
+import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WorkflowService, ConflictItem, RemixData } from '../../services/workflow.service';
@@ -10,21 +10,21 @@ import { IconComponent } from '../ui/icon.component';
   standalone: true,
   imports: [CommonModule, FormsModule, IconComponent],
   template: `
-    <div class="flex flex-col h-full bg-[var(--vibe-bg-main)]">
+    <div class="flex flex-col h-full bg-[var(--vibe-bg-main)] relative">
       
       <!-- Header -->
-      <div class="flex items-center p-4 bg-[var(--vibe-bg-card)] border-b shadow-sm shrink-0 border-[var(--vibe-border)]">
+      <div class="flex items-center p-4 bg-[var(--vibe-bg-card)] border-b shadow-sm shrink-0 border-[var(--vibe-border)] z-10">
         <div class="flex items-center gap-3">
           <div class="p-2 rounded-full bg-[var(--vibe-bg-header)]">
               <app-icon name="fact_check" [size]="24" class="text-[var(--vibe-accent)]"></app-icon>
           </div>
-          <h2 class="text-lg font-bold text-[var(--vibe-accent)]">{{ wf.t('check.title') }}</h2>
+          <h2 class="text-lg font-bold text-[var(--vibe-accent)] font-display">{{ wf.t('check.title') }}</h2>
         </div>
       </div>
 
       <!-- Content Area -->
-      <div class="flex-1 overflow-y-auto relative">
-        <div class="p-6 max-w-3xl mx-auto space-y-6 animate-fadeIn">
+      <div class="flex-1 overflow-y-auto scroll-smooth" #scrollContainer (scroll)="onScroll()">
+        <div class="p-4 md:p-6 max-w-3xl mx-auto space-y-6 animate-fadeIn pb-10">
           
           <!-- Loading State -->
           @if (isAnalyzing()) {
@@ -108,8 +108,15 @@ import { IconComponent } from '../ui/icon.component';
         </div>
       </div>
 
+      <!-- Scroll Button -->
+      @if (showScrollButton()) {
+        <button (click)="scrollToBottom()" class="absolute bottom-28 right-6 z-20 w-12 h-12 rounded-full bg-[var(--vibe-accent-bg)] text-[var(--vibe-on-accent)] shadow-lg flex items-center justify-center hover:opacity-90 transition-all animate-bounce-in">
+          <app-icon name="arrow_downward" [size]="24"></app-icon>
+        </button>
+      }
+
       <!-- Footer Navigation -->
-      <div class="p-4 bg-[var(--vibe-bg-card)] border-t flex justify-between items-center gap-4 shrink-0 border-[var(--vibe-border)]">
+      <div class="p-4 bg-[var(--vibe-bg-card)] border-t flex justify-between items-center gap-4 shrink-0 border-[var(--vibe-border)] z-10">
          <button (click)="wf.undo()" class="px-4 py-2 rounded-full text-sm font-medium hover:bg-black/5 transition-colors flex items-center gap-1 text-[var(--text-secondary)]">
             <app-icon name="arrow_back" [size]="18"></app-icon> {{ wf.t('common.back') }}
          </button>
@@ -180,10 +187,12 @@ import { IconComponent } from '../ui/icon.component';
       .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
       @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
       .animate-slideUp { animation: slideUp 0.3s cubic-bezier(0.2, 0.0, 0, 1.0) forwards; opacity: 0; animation-fill-mode: forwards; }
+      @keyframes bounce-in { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+      .animate-bounce-in { animation: bounce-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     </style>
   `
 })
-export class CheckComponent implements OnInit {
+export class CheckComponent implements OnInit, AfterViewChecked {
   wf = inject(WorkflowService);
   private gemini = inject(GeminiService);
   
@@ -211,6 +220,9 @@ export class CheckComponent implements OnInit {
      return Object.values(this.remixSelection()).filter(Boolean).length;
   });
 
+  showScrollButton = signal(false);
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+
   async ngOnInit() {
     if (!this.wf.state().analysisReport) {
        await this.runAnalysis();
@@ -218,6 +230,22 @@ export class CheckComponent implements OnInit {
        this.conflicts.set(this.wf.state().analysisReport!);
        this.isAnalyzing.set(false);
     }
+  }
+
+  ngAfterViewChecked() {
+    // Initial check
+  }
+
+  onScroll() {
+    const el = this.scrollContainer.nativeElement;
+    const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 100;
+    this.showScrollButton.set(!isAtBottom);
+  }
+
+  scrollToBottom() {
+    try {
+      this.scrollContainer.nativeElement.scrollTo({ top: this.scrollContainer.nativeElement.scrollHeight, behavior: 'smooth' });
+    } catch(e) {}
   }
 
   async runAnalysis() {

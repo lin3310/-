@@ -1,4 +1,4 @@
-import { Component, inject, computed } from '@angular/core';
+import { Component, inject, computed, ViewChild, ElementRef, signal, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { WorkflowService } from '../../services/workflow.service';
 import { IconComponent } from '../ui/icon.component';
@@ -8,16 +8,18 @@ import { IconComponent } from '../ui/icon.component';
   standalone: true,
   imports: [CommonModule, IconComponent],
   template: `
-    <div class="flex flex-col h-full bg-[var(--final-bg-main)]">
-      <div class="p-8 text-center animate-slideDown">
-        <div class="w-16 h-16 bg-[var(--final-accent-bg)] text-[var(--final-on-accent)] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-           <app-icon name="check" [size]="36"></app-icon>
+    <div class="flex flex-col h-full bg-[var(--final-bg-main)] relative">
+      
+      <!-- Scrollable Content -->
+      <div class="flex-1 overflow-y-auto px-6 pb-6 scroll-smooth" #scrollContainer (scroll)="onScroll()">
+        <div class="p-8 text-center animate-slideDown">
+            <div class="w-16 h-16 bg-[var(--final-accent-bg)] text-[var(--final-on-accent)] rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <app-icon name="check" [size]="36"></app-icon>
+            </div>
+            <h2 class="text-3xl font-bold text-[var(--final-accent)] font-display">{{ wf.t('final.title') }}</h2>
+            <p class="text-[var(--final-accent-light)]">{{ wf.t('final.subtitle') }}</p>
         </div>
-        <h2 class="text-3xl font-bold text-[var(--final-accent)]">{{ wf.t('final.title') }}</h2>
-        <p class="text-[var(--final-accent-light)]">{{ wf.t('final.subtitle') }}</p>
-      </div>
 
-      <div class="flex-1 overflow-y-auto px-6 pb-6">
         <div class="max-w-4xl mx-auto relative group">
           <div class="absolute top-4 right-4 z-10 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2">
             <button (click)="copy()" class="bg-[var(--final-accent)] text-[var(--final-on-accent)] px-3 py-2 rounded-lg text-xs font-bold shadow-md hover:scale-105 transition-transform flex items-center gap-1">
@@ -44,10 +46,17 @@ import { IconComponent } from '../ui/icon.component';
               </button>
            </div>
         </div>
-
+        <div class="h-10"></div>
       </div>
 
-      <div class="p-6 text-center border-t border-[var(--final-border)]">
+      <!-- Scroll Button -->
+      @if (showScrollButton()) {
+        <button (click)="scrollToBottom()" class="absolute bottom-24 right-6 z-20 w-12 h-12 rounded-full bg-[var(--final-accent)] text-[var(--final-on-accent)] shadow-lg flex items-center justify-center hover:opacity-90 transition-all animate-bounce-in border border-[var(--final-border)]">
+          <app-icon name="arrow_downward" [size]="24"></app-icon>
+        </button>
+      }
+
+      <div class="p-6 text-center border-t border-[var(--final-border)] bg-[var(--final-bg-main)] z-10">
         <button (click)="restart()" class="text-[var(--final-accent-light)] hover:text-[var(--final-accent)] font-medium flex items-center justify-center gap-2 mx-auto transition-colors">
            <app-icon name="restart_alt" [size]="20"></app-icon> {{ wf.t('common.create_new') }}
         </button>
@@ -56,12 +65,33 @@ import { IconComponent } from '../ui/icon.component';
     <style>
       @keyframes slideDown { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
       .animate-slideDown { animation: slideDown 0.6s ease-out forwards; }
+      @keyframes bounce-in { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
+      .animate-bounce-in { animation: bounce-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
     </style>
   `
 })
-export class FinalComponent {
+export class FinalComponent implements AfterViewChecked {
   wf = inject(WorkflowService);
   prompt = computed(() => this.wf.state().currentDraft);
+
+  showScrollButton = signal(false);
+  @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
+
+  ngAfterViewChecked() {
+    // Initial check handled by user interaction
+  }
+
+  onScroll() {
+    const el = this.scrollContainer.nativeElement;
+    const isAtBottom = el.scrollHeight - el.scrollTop <= el.clientHeight + 100;
+    this.showScrollButton.set(!isAtBottom);
+  }
+
+  scrollToBottom() {
+    try {
+      this.scrollContainer.nativeElement.scrollTo({ top: this.scrollContainer.nativeElement.scrollHeight, behavior: 'smooth' });
+    } catch(e) {}
+  }
 
   copy() {
     navigator.clipboard.writeText(this.prompt());
@@ -73,10 +103,8 @@ export class FinalComponent {
     let filename = `Persona_Prompt_${new Date().toISOString().split('T')[0]}.${ext}`;
 
     if (ext === 'json') {
-        // Try to see if we have structured data, otherwise wrap string
         const structured = this.wf.state().structuredPersona;
         if (structured) {
-           // Wrap the prompt and include structure as metadata if available
            content = JSON.stringify({
               systemPrompt: content,
               metadata: structured

@@ -1,7 +1,8 @@
+
 import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit, computed } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { WorkflowService, ChatMessage } from '../../services/workflow.service';
+import { WorkflowService, ChatMessage, GroundingChunk } from '../../services/workflow.service';
 import { GeminiService } from '../../services/gemini.service';
 import { IconComponent } from '../ui/icon.component';
 import { Chat } from '@google/genai';
@@ -170,7 +171,8 @@ export class SimulationComponent implements OnInit, AfterViewChecked {
   async generateQuotes() {
     this.isProcessing.set(true);
     try {
-      const q = await this.gemini.generateQuotes(this.wf.state().currentDraft);
+      // Pass current language to ensure localized output
+      const q = await this.gemini.generateQuotes(this.wf.state().currentDraft, this.wf.currentLang());
       this.quoteContent.set(q);
     } finally {
       this.isProcessing.set(false);
@@ -189,7 +191,11 @@ export class SimulationComponent implements OnInit, AfterViewChecked {
 
     try {
       const response = await this.chatSession!.sendMessage({ message: text });
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+      const sdkChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+      const groundingChunks: GroundingChunk[] = sdkChunks
+             .filter(c => c.web?.uri)
+             .map(c => ({ web: { uri: c.web!.uri!, title: c.web!.title ?? c.web!.uri! } }));
+
       this.messages.update(m => [...m, { role: 'model', text: response.text, groundingChunks }]);
     } catch (e) {
       this.messages.update(m => [...m, { role: 'model', text: this.wf.t('sim.error_message') }]);

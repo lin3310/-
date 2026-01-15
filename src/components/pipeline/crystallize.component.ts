@@ -1,3 +1,4 @@
+
 import { Component, inject, signal, OnInit, ElementRef, ViewChild, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -179,7 +180,8 @@ export class CrystallizeComponent implements OnInit, AfterViewChecked {
     const current = this.structuredPersona();
     if (current) {
       try {
-        const newContent = await this.gemini.regenerateVibeSection(this.wf.state().vibeFragment!, current, key);
+        // Pass current language to ensure regeneration matches UI language
+        const newContent = await this.gemini.regenerateVibeSection(this.wf.state().vibeFragment!, current, key, this.wf.currentLang());
         this.structuredPersona.set({ ...current, [key]: newContent });
       } catch (e) {
         console.error("Regeneration failed", e);

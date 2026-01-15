@@ -1,3 +1,4 @@
+
 import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit, output, computed, ChangeDetectionStrategy, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -6,11 +7,12 @@ import { WorkflowService, ChatMessage, GroundingChunk } from '../services/workfl
 import { IconComponent } from './ui/icon.component';
 import { Chat } from '@google/genai';
 import { InspirationModalComponent, AnswerMap, AnsweredQuestion } from './inspiration-modal.component';
+import { LoadingOverlayComponent } from './ui/loading-overlay.component';
 
 @Component({
   selector: 'app-vibecode',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent, InspirationModalComponent],
+  imports: [CommonModule, FormsModule, IconComponent, InspirationModalComponent, LoadingOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col h-full relative bg-[var(--vibe-bg-main)]">
@@ -123,32 +125,12 @@ import { InspirationModalComponent, AnswerMap, AnsweredQuestion } from './inspir
       />
     }
 
-    <!-- Alchemical Crystallization Overlay -->
-    @if (isCrystallizing()) {
-      <div class="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex flex-col items-center justify-center animate-fadeIn text-white">
-        
-        <!-- Animated Sigil -->
-        <div class="relative w-32 h-32 mb-8">
-           <!-- Outer Ring -->
-           <div class="absolute inset-0 border-2 border-white/20 rounded-full animate-[spin_10s_linear_infinite]"></div>
-           <!-- Inner Dashed Ring -->
-           <div class="absolute inset-4 border-2 border-dashed border-white/40 rounded-full animate-[spin_8s_linear_infinite_reverse]"></div>
-           <!-- Core Pulse -->
-           <div class="absolute inset-0 flex items-center justify-center">
-              <div class="w-4 h-4 bg-white rounded-full animate-ping"></div>
-           </div>
-           <!-- Rotating Icon -->
-           <div class="absolute inset-0 flex items-center justify-center animate-pulse">
-              <app-icon name="psychology" [size]="48" class="text-white/90"></app-icon>
-           </div>
-        </div>
-
-        <h3 class="text-2xl md:text-3xl font-display font-bold text-white tracking-widest uppercase mb-2 animate-pulse text-center">
-           {{ loadingStepText() }}
-        </h3>
-        <p class="text-white/60 font-mono text-sm">{{ wf.t('vibe.compiling_desc') }}</p>
-      </div>
-    }
+    <!-- Loading Overlay -->
+    <app-loading-overlay 
+      [isVisible]="isCrystallizing()"
+      [subtitle]="wf.t('vibe.compiling_desc')"
+      [steps]="loadingSteps">
+    </app-loading-overlay>
 
     <style>
       @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -175,10 +157,7 @@ export class VibeCodeComponent implements OnInit, AfterViewChecked, OnDestroy {
   answeredQuestions = signal<AnswerMap>(new Map());
   answeredCount = computed(() => this.answeredQuestions().size);
 
-  // Loading Animation State
-  loadingStepText = signal('Initializing...');
-  private loadingInterval: any;
-  private loadingSteps = [
+  loadingSteps = [
     'Extracting Keywords...',
     'Analyzing Vibe Spectrum...',
     'Detecting Archetypes...',
@@ -189,7 +168,8 @@ export class VibeCodeComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
   ngOnInit() {
-    this.chatSession = this.gemini.startVibeCodeChat();
+    // Pass the current language to ensure the AI knows which language to reply in
+    this.chatSession = this.gemini.startVibeCodeChat(this.wf.currentLang());
     const state = this.wf.state();
 
     if (state.vibeMessages && state.vibeMessages.length > 0) {
@@ -214,9 +194,7 @@ export class VibeCodeComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
   
-  ngOnDestroy() {
-    if (this.loadingInterval) clearInterval(this.loadingInterval);
-  }
+  ngOnDestroy() {}
 
   scrollToBottom() { try { this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight; } catch(e){} }
 
@@ -255,7 +233,12 @@ export class VibeCodeComponent implements OnInit, AfterViewChecked, OnDestroy {
         fullText += chunk.text;
         const newChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
         for (const ch of newChunks) {
-            if (ch.web?.uri) groundingChunkMap.set(ch.web.uri, ch);
+            if (ch.web?.uri) {
+                // Strictly map SDK chunk to Workflow GroundingChunk
+                groundingChunkMap.set(ch.web.uri, {
+                    web: { uri: ch.web.uri, title: ch.web.title ?? ch.web.uri }
+                });
+            }
         }
         this.messages.update(m => [...m.slice(0, -1), { role: 'model', text: fullText, isStreaming: true }]);
         this.needsScroll = true;
@@ -303,11 +286,11 @@ export class VibeCodeComponent implements OnInit, AfterViewChecked, OnDestroy {
     let conversation = currentMessages.map(m => `${m.role}: ${m.text}`).join('\n');
     if (!conversation.replace(/user:|model:/g, '').trim()) return;
 
-    this.startLoadingAnimation();
     this.isCrystallizing.set(true);
     
     try {
-      const structuredResult = await this.gemini.structureVibe(conversation);
+      // Pass current language to ensure result matches UI language
+      const structuredResult = await this.gemini.structureVibe(conversation, this.wf.currentLang());
       this.wf.pushState({ 
           vibeMessages: currentMessages,
           vibeFragment: conversation, 
@@ -319,22 +302,8 @@ export class VibeCodeComponent implements OnInit, AfterViewChecked, OnDestroy {
       console.error("Failed to crystallize vibe:", e);
       alert("An error occurred while analyzing your ideas. Please try again.");
     } finally {
-      this.stopLoadingAnimation();
       this.isCrystallizing.set(false);
     }
-  }
-
-  private startLoadingAnimation() {
-      let stepIndex = 0;
-      this.loadingStepText.set(this.loadingSteps[0]);
-      this.loadingInterval = setInterval(() => {
-          stepIndex = (stepIndex + 1) % this.loadingSteps.length;
-          this.loadingStepText.set(this.loadingSteps[stepIndex]);
-      }, 1200); // Change text every 1.2 seconds
-  }
-
-  private stopLoadingAnimation() {
-      if (this.loadingInterval) clearInterval(this.loadingInterval);
   }
 
   goBack() {

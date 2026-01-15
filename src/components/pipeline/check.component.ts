@@ -1,14 +1,16 @@
+
 import { Component, inject, signal, OnInit, computed, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { WorkflowService, ConflictItem, RemixData } from '../../services/workflow.service';
 import { GeminiService } from '../../services/gemini.service';
 import { IconComponent } from '../ui/icon.component';
+import { LoadingOverlayComponent } from '../ui/loading-overlay.component';
 
 @Component({
   selector: 'app-check',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent],
+  imports: [CommonModule, FormsModule, IconComponent, LoadingOverlayComponent],
   template: `
     <div class="flex flex-col h-full bg-[var(--vibe-bg-main)] relative">
       
@@ -26,13 +28,9 @@ import { IconComponent } from '../ui/icon.component';
       <div class="flex-1 overflow-y-auto scroll-smooth" #scrollContainer (scroll)="onScroll()">
         <div class="p-4 md:p-6 max-w-3xl mx-auto space-y-6 animate-fadeIn pb-10">
           
-          <!-- Loading State -->
+          <!-- Loading State (Replaced by overlay, keeping a simple spacer if needed) -->
           @if (isAnalyzing()) {
-            <div class="flex flex-col items-center justify-center py-20 text-[var(--vibe-accent)]">
-              <div class="w-16 h-16 border-4 border-t-transparent rounded-full animate-spin mb-6 border-[var(--vibe-border)] border-t-[var(--vibe-accent)]"></div>
-              <h3 class="text-xl font-bold">{{ wf.t('common.loading') }}</h3>
-              <p class="opacity-60 mt-2">{{ wf.t('check.title') }}...</p>
-            </div>
+             <div class="h-64"></div>
           }
 
           <!-- Results State -->
@@ -182,6 +180,21 @@ import { IconComponent } from '../ui/icon.component';
       </div>
     }
 
+    <!-- Loading Overlays -->
+    <app-loading-overlay
+      [isVisible]="isAnalyzing()"
+      [subtitle]="wf.t('check.analyzing_desc')"
+      [steps]="analysisSteps"
+      iconName="fact_check">
+    </app-loading-overlay>
+
+    <app-loading-overlay
+      [isVisible]="isRemixing()"
+      [subtitle]="wf.t('check.remix_modal.desc')"
+      [steps]="remixSteps"
+      iconName="upgrade">
+    </app-loading-overlay>
+
     <style>
       @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
       .animate-fadeIn { animation: fadeIn 0.4s ease-out forwards; }
@@ -215,6 +228,20 @@ export class CheckComponent implements OnInit, AfterViewChecked {
       secret_desire: true,
       worldview: true
   });
+  
+  analysisSteps = [
+    'Scanning for Contradictions...',
+    'Analyzing Psychological Depth...',
+    'Detecting Logic Flaws...',
+    'Generating Report...'
+  ];
+
+  remixSteps = [
+    'Deepening Core Wound...',
+    'Synthesizing Inner Voice...',
+    'Constructing Worldview...',
+    'Applying Psychological Layers...'
+  ];
   
   selectedCount = computed(() => {
      return Object.values(this.remixSelection()).filter(Boolean).length;

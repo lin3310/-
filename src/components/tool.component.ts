@@ -1,3 +1,4 @@
+
 import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -189,7 +190,11 @@ export class ToolComponent implements OnInit, AfterViewChecked {
     
     try {
       const response = await this.chatSession.sendMessage({ message: this.wf.t('tool.init_prompt') });
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+      const sdkChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+      const groundingChunks: GroundingChunk[] = sdkChunks
+             .filter(c => c.web?.uri)
+             .map(c => ({ web: { uri: c.web!.uri!, title: c.web!.title ?? c.web!.uri! } }));
+
       this.messages.update(m => [...m, { role: 'model', text: response.text, groundingChunks }]);
     } catch (error) {
       this.messages.update(m => [...m, { role: 'model', text: this.wf.t('common.error.connection_refused') }]);
@@ -232,7 +237,10 @@ export class ToolComponent implements OnInit, AfterViewChecked {
          const newChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
         for (const ch of newChunks) {
             if (ch.web?.uri) {
-                groundingChunkMap.set(ch.web.uri, ch);
+                // Strictly map SDK chunk to Workflow GroundingChunk
+                groundingChunkMap.set(ch.web.uri, {
+                    web: { uri: ch.web.uri, title: ch.web.title ?? ch.web.uri }
+                });
             }
         }
         const intermediateChunks = Array.from(groundingChunkMap.values());

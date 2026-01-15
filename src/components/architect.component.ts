@@ -1,14 +1,16 @@
+
 import { Component, inject, signal, output, ViewChild, ElementRef, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, ReactiveFormsModule, Validators, FormGroup } from '@angular/forms';
 import { GeminiService } from '../services/gemini.service';
 import { WorkflowService } from '../services/workflow.service';
 import { IconComponent } from './ui/icon.component';
+import { LoadingOverlayComponent } from './ui/loading-overlay.component';
 
 @Component({
   selector: 'app-architect',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, LoadingOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-col h-full bg-[var(--arch-bg-main)] overflow-hidden relative">
@@ -302,7 +304,7 @@ import { IconComponent } from './ui/icon.component';
       </div>
       
       <!-- Loading Overlay (Magic Fill) -->
-      @if (isGenerating() && currentStep() !== 3 && currentStep() !== 4) {
+      @if (isGenerating() && currentStep() !== 3) {
          <div class="absolute inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center animate-fadeIn">
             <div class="bg-[var(--arch-bg-card)] p-4 rounded-xl shadow-lg border border-[var(--arch-border)] flex items-center gap-3">
                <span class="animate-spin text-[var(--arch-accent)]"><app-icon name="auto_awesome" [size]="24"></app-icon></span>
@@ -310,6 +312,14 @@ import { IconComponent } from './ui/icon.component';
             </div>
          </div>
       }
+
+      <!-- Full Screen Loading Overlay (Compilation) -->
+      <app-loading-overlay
+        [isVisible]="isGenerating() && currentStep() === 3"
+        [subtitle]="wf.t('common.compiling')"
+        [steps]="loadingSteps"
+        iconName="architecture">
+      </app-loading-overlay>
     </div>
     <style>
       .scrollbar-hide::-webkit-scrollbar { display: none; }
@@ -347,6 +357,13 @@ export class ArchitectComponent {
     { label: 'arch.step3' },
     { label: 'arch.step4' },
     { label: 'arch.step5' }
+  ];
+  
+  loadingSteps = [
+    'Validating Inputs...',
+    'Constructing Blueprint...',
+    'Optimizing Engineering Constraints...',
+    'Finalizing System Prompt...'
   ];
   
   currentStep = signal(0);
@@ -387,7 +404,7 @@ export class ArchitectComponent {
 
   scrollToBottom(): void {
     try {
-      this.scrollContainer.nativeElement.scrollTop = this.scrollContainer.nativeElement.scrollHeight;
+      this.scrollContainer.nativeElement.scrollTo({ top: this.scrollContainer.nativeElement.scrollHeight, behavior: 'smooth' });
     } catch(err) { }
   }
 

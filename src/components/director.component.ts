@@ -1,3 +1,4 @@
+
 import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -5,11 +6,12 @@ import { GeminiService } from '../services/gemini.service';
 import { WorkflowService, ChatMessage, GroundingChunk } from '../services/workflow.service';
 import { IconComponent } from './ui/icon.component';
 import { Chat } from '@google/genai';
+import { LoadingOverlayComponent } from './ui/loading-overlay.component';
 
 @Component({
   selector: 'app-director',
   standalone: true,
-  imports: [CommonModule, FormsModule, IconComponent],
+  imports: [CommonModule, FormsModule, IconComponent, LoadingOverlayComponent],
   template: `
     <div class="flex flex-col h-full bg-[var(--vibe-bg-main)] relative">
       
@@ -112,6 +114,15 @@ import { Chat } from '@google/genai';
         </div>
       </div>
     </div>
+
+    <!-- Loading Overlay -->
+    <app-loading-overlay
+      [isVisible]="isProcessing() && isCompiling"
+      [subtitle]="wf.t('common.compiling')"
+      [steps]="compilationSteps"
+      iconName="movie_filter">
+    </app-loading-overlay>
+
      <style>
        @keyframes bounce-in { 0% { transform: scale(0); opacity: 0; } 50% { transform: scale(1.1); } 100% { transform: scale(1); opacity: 1; } }
       .animate-bounce-in { animation: bounce-in 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
@@ -128,7 +139,15 @@ export class DirectorComponent implements OnInit, AfterViewChecked {
   messages = signal<ChatMessage[]>([]);
   userInput = '';
   isProcessing = signal(false);
+  isCompiling = false; // Flag to distinguish simple msg vs compilation for overlay
   showScrollButton = signal(false);
+  
+  compilationSteps = [
+    'Compiling Interview Data...',
+    'Refining System Prompt...',
+    'Applying Directorial Constraints...',
+    'Final Polish...'
+  ];
   
   @ViewChild('scrollContainer') private scrollContainer!: ElementRef;
 
@@ -164,7 +183,10 @@ export class DirectorComponent implements OnInit, AfterViewChecked {
         const newChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
          for (const ch of newChunks) {
             if (ch.web?.uri) {
-                groundingChunkMap.set(ch.web.uri, ch);
+                // Strictly map SDK chunk to Workflow GroundingChunk
+                groundingChunkMap.set(ch.web.uri, {
+                    web: { uri: ch.web.uri, title: ch.web.title ?? ch.web.uri }
+                });
             }
         }
         const intermediateChunks = Array.from(groundingChunkMap.values());
@@ -215,7 +237,10 @@ export class DirectorComponent implements OnInit, AfterViewChecked {
         const newChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
         for (const ch of newChunks) {
             if (ch.web?.uri) {
-                groundingChunkMap.set(ch.web.uri, ch);
+                // Strictly map SDK chunk to Workflow GroundingChunk
+                groundingChunkMap.set(ch.web.uri, {
+                    web: { uri: ch.web.uri, title: ch.web.title ?? ch.web.uri }
+                });
             }
         }
         const intermediateChunks = Array.from(groundingChunkMap.values());
@@ -231,14 +256,20 @@ export class DirectorComponent implements OnInit, AfterViewChecked {
   }
 
   async finishRefining() {
+    this.isCompiling = true;
     this.isProcessing.set(true);
     try {
         const prompt = this.wf.t('director.system.compile_prompt');
-        this.messages.update(m => [...m, { role: 'user', text: `[${this.wf.t('common.compiling')}]` }]);
+        // Do NOT update messages here, keep UI clean or show overlay.
+        // If we want to show it in chat:
+        // this.messages.update(m => [...m, { role: 'user', text: `[${this.wf.t('common.compiling')}]` }]);
         
         const response = await this.chatSession!.sendMessage({ message: prompt });
         const updatedDraft = response.text;
-        const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+        const sdkChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+        const groundingChunks: GroundingChunk[] = sdkChunks
+             .filter(c => c.web?.uri)
+             .map(c => ({ web: { uri: c.web!.uri!, title: c.web!.title ?? c.web!.uri! } }));
 
         this.messages.update(m => [...m, { role: 'model', text: updatedDraft, groundingChunks: groundingChunks }]);
         
@@ -250,6 +281,7 @@ export class DirectorComponent implements OnInit, AfterViewChecked {
         alert(this.wf.t('common.error.compilation_failed'));
     } finally {
         this.isProcessing.set(false);
+        this.isCompiling = false;
     }
   }
 

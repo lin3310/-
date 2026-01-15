@@ -1,3 +1,4 @@
+
 import { Component, inject, signal, ElementRef, ViewChild, AfterViewChecked, OnInit, output } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
@@ -101,11 +102,6 @@ import { Chat } from '@google/genai';
                 class="w-full bg-[var(--antibias-bg-input)] text-[var(--text-primary)] rounded-xl py-3 px-4 pr-12 outline-none border border-[var(--antibias-border)] focus:border-[var(--antibias-accent)] focus:ring-1 focus:ring-[var(--antibias-accent)] font-mono text-sm resize-none overflow-hidden min-h-[52px] max-h-[150px] shadow-inner transition-colors"
                 rows="1"
             ></textarea>
-            <button (click)="autoFill()" [disabled]="isProcessing()"
-                  class="absolute right-2 top-2 p-1.5 rounded-full text-[var(--antibias-accent)] opacity-60 hover:opacity-100 hover:bg-black/10 transition-all" 
-                  [title]="wf.t('common.auto_fill')">
-                <app-icon name="auto_awesome" [size]="18"></app-icon>
-            </button>
           </div>
 
           <button 
@@ -116,8 +112,18 @@ import { Chat } from '@google/genai';
           </button>
         </div>
         
-        <div class="text-center mt-3">
-           <button (click)="requestWrapUp()" class="text-xs text-[var(--antibias-accent)] hover:bg-[var(--antibias-bg-header)] px-3 py-1 rounded-lg transition-colors font-bold tracking-widest border border-transparent hover:border-[var(--antibias-border)] uppercase">
+        <div class="text-center mt-3 flex justify-center gap-4 flex-wrap">
+           <!-- Unsure Button -->
+           <button (click)="sendUnsure()" [disabled]="isProcessing()"
+                   class="text-xs text-[var(--antibias-accent)] hover:bg-[var(--antibias-bg-header)] px-3 py-1.5 rounded-lg transition-colors font-bold tracking-wide border border-[var(--antibias-border)] flex items-center gap-1">
+             <app-icon name="help_center" [size]="16"></app-icon>
+             {{ wf.t('antibias.btn_unsure') }}
+           </button>
+
+           <!-- Compile Button -->
+           <button (click)="requestWrapUp()" [disabled]="isProcessing()"
+                   class="text-xs text-[var(--antibias-accent)] hover:bg-[var(--antibias-bg-header)] px-3 py-1.5 rounded-lg transition-colors font-bold tracking-widest border border-transparent hover:border-[var(--antibias-border)] uppercase flex items-center gap-1">
+             <app-icon name="check_circle" [size]="16"></app-icon>
              {{ wf.t('antibias.compile') }}
            </button>
         </div>
@@ -184,7 +190,11 @@ export class AntiBiasComponent implements OnInit, AfterViewChecked {
     
     try {
       const response = await this.chatSession.sendMessage({ message: this.wf.t('antibias.init_prompt') });
-      const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+      const sdkChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
+      const groundingChunks: GroundingChunk[] = sdkChunks
+             .filter(c => c.web?.uri)
+             .map(c => ({ web: { uri: c.web!.uri!, title: c.web!.title ?? c.web!.uri! } }));
+
       this.messages.update(m => [...m, { role: 'model', text: response.text, groundingChunks }]);
     } catch (error) {
       this.messages.update(m => [...m, { role: 'model', text: this.wf.t('common.error.connection_refused') }]);
@@ -201,22 +211,28 @@ export class AntiBiasComponent implements OnInit, AfterViewChecked {
              } else if (event.key === 'Enter' && event.shiftKey) {
                  return; 
              }
+        } else if ('text' in event) {
+            // Allow manual text object
         } else {
              event.preventDefault();
         }
     }
+    
+    const textToSend = (event && 'text' in event) ? event.text : this.userInput;
 
-    if (!this.userInput.trim() || this.isProcessing()) return;
+    if (!textToSend.trim() || this.isProcessing()) return;
 
-    const userText = this.userInput;
-    this.userInput = '';
-    this.messages.update(m => [...m, { role: 'user', text: userText }]);
+    if (!(event && 'text' in event)) {
+        this.userInput = '';
+    }
+    
+    this.messages.update(m => [...m, { role: 'user', text: textToSend }]);
     this.isProcessing.set(true);
     
     setTimeout(() => this.scrollToBottom(), 0);
 
     try {
-      const resultStream = await this.chatSession!.sendMessageStream({ message: userText });
+      const resultStream = await this.chatSession!.sendMessageStream({ message: textToSend });
       
       this.messages.update(m => [...m, { role: 'model', text: '', isStreaming: true }]);
       
@@ -228,7 +244,10 @@ export class AntiBiasComponent implements OnInit, AfterViewChecked {
         const newChunks = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks ?? [];
         for (const ch of newChunks) {
             if (ch.web?.uri) {
-                groundingChunkMap.set(ch.web.uri, ch);
+                // Strictly map SDK chunk to Workflow GroundingChunk
+                groundingChunkMap.set(ch.web.uri, {
+                    web: { uri: ch.web.uri, title: ch.web.title ?? ch.web.uri }
+                });
             }
         }
         const intermediateChunks = Array.from(groundingChunkMap.values());
@@ -257,22 +276,12 @@ export class AntiBiasComponent implements OnInit, AfterViewChecked {
       this.scrollToBottom();
     }
   }
-  
-  async autoFill() {
-      this.isProcessing.set(true);
-      try {
-          const context = {
-              history: this.messages().map(m => `${m.role}: ${m.text}`).join('\n')
-          };
-          const suggestion = await this.gemini.generateFieldSuggestion('Next logical response', context, 'Suggest a thoughtful response to continue the bias analysis.');
-          this.userInput = suggestion;
-      } finally {
-          this.isProcessing.set(false);
-      }
+
+  async sendUnsure() {
+      this.sendMessage({ text: this.wf.t('antibias.unsure_prompt') });
   }
 
   async requestWrapUp() {
-    this.userInput = this.wf.t('antibias.compile_prompt');
-    this.sendMessage();
+    this.sendMessage({ text: this.wf.t('antibias.compile_prompt') });
   }
 }

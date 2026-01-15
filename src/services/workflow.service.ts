@@ -1,3 +1,4 @@
+
 import { Injectable, signal, computed, effect, inject } from '@angular/core';
 import { GeminiService } from './gemini.service';
 
@@ -311,7 +312,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[DECONSTRUCT_BIAS]',
     'antibias.compile_prompt': 'Analysis is complete. Please provide the de-biased summary and recommendation now.',
     'antibias.init_prompt': 'I need to analyze something for psychological biases. Please start the deconstruction protocol.',
-    'antibias.sources': 'Sources'
+    'antibias.sources': 'Sources',
+    'antibias.btn_unsure': 'Not Sure / Ambiguous',
+    'antibias.unsure_prompt': 'I am not sure. It feels ambiguous. Please help me analyze the possibilities.'
   },
   'zh-TW': {
     'common.back': '返回',
@@ -469,7 +472,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[解構偏誤]',
     'antibias.compile_prompt': '分析完成，請提供去偏誤總結與建議。',
     'antibias.init_prompt': '我需要分析一段內容中的心理學偏誤，請啟動解構協議。',
-    'antibias.sources': '資料來源'
+    'antibias.sources': '資料來源',
+    'antibias.btn_unsure': '不確定 / 模稜兩可',
+    'antibias.unsure_prompt': '我不確定，感覺有點模糊。請協助我分析可能的意圖。'
   },
   'zh-CN': {
     'common.back': '返回',
@@ -627,7 +632,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[解构偏见]',
     'antibias.compile_prompt': '分析完成，请提供去偏见总结与建议。',
     'antibias.init_prompt': '我需要分析一段内容中的心理学偏见，请启动解构协议。',
-    'antibias.sources': '资料来源'
+    'antibias.sources': '资料来源',
+    'antibias.btn_unsure': '不确定 / 模棱两可',
+    'antibias.unsure_prompt': '我不确定，感觉有点模糊。请协助我分析可能的意图。'
   },
   es: {
     'common.back': 'Atrás',
@@ -785,7 +792,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[DECONSTRUIR_SESGO]',
     'antibias.compile_prompt': 'Análisis completo. Proporcione ahora el resumen y la recomendación sin sesgos.',
     'antibias.init_prompt': 'Necesito analizar algo en busca de sesgos psicológicos. Por favor, inicia el protocolo de deconstrucción.',
-    'antibias.sources': 'Fuentes'
+    'antibias.sources': 'Fuentes',
+    'antibias.btn_unsure': 'No estoy seguro / Ambiguo',
+    'antibias.unsure_prompt': 'No estoy seguro. Se siente ambiguo. Por favor, ayúdame a analizar las posibilidades.'
   },
   fr: {
     'common.back': 'Retour',
@@ -943,7 +952,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[DECONSTRUIR_LE_BIAIS]',
     'antibias.compile_prompt': 'Analyse terminée. Veuillez fournir le résumé et la recommandation sans biais maintenant.',
     'antibias.init_prompt': 'Je dois analyser quelque chose pour des biais psychologiques. Veuillez lancer le protocole de déconstruction.',
-    'antibias.sources': 'Sources'
+    'antibias.sources': 'Sources',
+    'antibias.btn_unsure': 'Pas sûr / Ambigu',
+    'antibias.unsure_prompt': 'Je ne suis pas sûr. Cela semble ambigu. Aidez-moi s\'il vous plaît à analyser les possibilités.'
   },
   ja: {
     'common.back': '戻る',
@@ -1101,7 +1112,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[バイアスを解体]',
     'antibias.compile_prompt': '分析完了。バイアスのない要約と推奨事項を提供してください。',
     'antibias.init_prompt': '心理的バイアスを分析する必要があります。解体プロトコルを開始してください。',
-    'antibias.sources': '情報源'
+    'antibias.sources': '情報源',
+    'antibias.btn_unsure': '不明 / 曖昧',
+    'antibias.unsure_prompt': 'よくわかりません。曖昧な感じがします。可能性を分析するのを手伝ってください。'
   },
   ko: {
     'common.back': '뒤로',
@@ -1259,7 +1272,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[편향 해체]',
     'antibias.compile_prompt': '분석 완료. 편향 없는 요약과 권장 사항을 제공하세요.',
     'antibias.init_prompt': '심리적 편향을 분석해야 합니다. 해체 프로토콜을 시작해주세요.',
-    'antibias.sources': '출처'
+    'antibias.sources': '출처',
+    'antibias.btn_unsure': '잘 모름 / 모호함',
+    'antibias.unsure_prompt': '잘 모르겠습니다. 애매한 것 같아요. 가능성을 분석하도록 도와주세요.'
   },
   de: {
     'common.back': 'Zurück',
@@ -1417,7 +1432,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[BIAS_DEKONSTRUIEREN]',
     'antibias.compile_prompt': 'Analyse abgeschlossen. Bitte geben Sie jetzt die Zusammenfassung und Empfehlung ohne Bias.',
     'antibias.init_prompt': 'Ich muss etwas auf psychologische Biases analysieren. Bitte starten Sie das Dekonstruktionsprotokoll.',
-    'antibias.sources': 'Quellen'
+    'antibias.sources': 'Quellen',
+    'antibias.btn_unsure': 'Unsicher / Mehrdeutig',
+    'antibias.unsure_prompt': 'Ich bin mir nicht sicher. Es fühlt sich mehrdeutig an. Bitte helfen Sie mir, die Möglichkeiten zu analysieren.'
   },
   pt: {
     'common.back': 'Voltar',
@@ -1575,7 +1592,9 @@ const TRANSLATIONS = {
     'antibias.compile': '[DESCONSTRUIR_VIÉS]',
     'antibias.compile_prompt': 'Análise completa. Forneça agora o resumo e a recomendação sem viés.',
     'antibias.init_prompt': 'Preciso analisar algo em busca de vieses psicológicos. Inicie o protocolo de desconstrução.',
-    'antibias.sources': 'Fontes'
+    'antibias.sources': 'Fontes',
+    'antibias.btn_unsure': 'Não tenho certeza / Ambíguo',
+    'antibias.unsure_prompt': 'Não tenho certeza. Parece ambíguo. Por favor, ajude-me a analisar as possibilidades.'
   }
 };
 
